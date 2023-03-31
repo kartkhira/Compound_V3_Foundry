@@ -22,35 +22,32 @@ contract DeployScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
         vm.broadcast(deployerPrivateKey);
-        CometProxyAdmin mumbaiCometAdminProxy = new CometProxyAdmin();
-        vm.stopBroadcast();
 
-        vm.broadcast(deployerPrivateKey);
+        // Deploy Admin Proxy.
+        // This Admin is responsible for proxy updates including implementation updates
+        CometProxyAdmin mumbaiCometAdminProxy = new CometProxyAdmin();
+
         CometExt mumbaiCometExt = new CometExt(CometConfiguration.ExtConfiguration({
             name32: "Compound Chee USDC",
             symbol32: "cUSDCv3"
         }));
-        vm.stopBroadcast();
 
-        vm.broadcast(deployerPrivateKey);
+        //Deploy Comet Factory
         CometFactory mumbaiCometFactory = new CometFactory();
-        vm.stopBroadcast();
 
-        vm.broadcast(deployerPrivateKey);
+        // Deploy the configurator
         Configurator mumbaiCometConfigurator = new Configurator();
-        vm.stopBroadcast();
 
-        vm.broadcast(deployerPrivateKey);
-        mumbaiCometConfigurator.initialize(deployerPrivateKey);
-        vm.stopBroadcast();
+        // Get the data ready 
+        bytes memory data = abi.encodeWithSignature("initialize(address)", deployerPrivateKey);
 
-        vm.broadcast(deployerPrivateKey);
+        // deploy Configurator Transparent proxy
         ConfiguratorProxy mumbaiCometConfiguratorProxy = new ConfiguratorProxy(
             mumbaiCometConfigurator,
             mumbaiCometAdminProxy,
-            []
+            data
         );
-        vm.stopBroadcast();
+
 
         CometConfiguration.AssetConfig[] memory assetConfigs = new CometConfiguration.AssetConfig[](4);
         assetConfigs[0] = CometConfiguration.AssetConfig({
@@ -93,7 +90,8 @@ contract DeployScript is Script {
             supplyCap: 1_000_000e18
         });
 
-        vm.broadcast(deployerPrivateKey);
+
+        // deploy Comet Implementation
         comet mumbaiCometImpl = new Comet(CometConfiguration.Configuration(
             {
                 governor: deployerPrivateKey,
@@ -119,14 +117,14 @@ contract DeployScript is Script {
                 assetConfigs: assetConfigs
             }
         ));
-        vm.stopBroadcast();
 
-        vm.broadcast(deployerPrivateKey);
+        // Deploy Transparent Comet Proxy
         TransparentUpgradeableProxy mumbaiCometProxy = new TransparentUpgradeableProxy(
             mumbaiCometImpl,
             deployerPrivateKey,
             []
         );
+
         vm.stopBroadcast();
     }
 }
