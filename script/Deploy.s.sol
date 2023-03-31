@@ -13,15 +13,15 @@ import "../src/Configurator.sol";
 import "../src/ConfiguratorProxy.sol";
 import "../src/CometRewards.sol";
 
-import {configMumbai} from"./Utils/configuration.sol";
-import {Constants} from './Utils/Constants.Alfajores.sol';
+import {Constants} from './Utils/Constants.Mumbai.sol';
 
 contract DeployScript is Script {
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployer = vm.envUint("PRIVATE_KEY");
 
-        vm.broadcast(deployerPrivateKey);
+        address deployerPrivateKey = vm.rememberKey(deployer);
+        vm.startBroadcast(deployerPrivateKey);
 
         // Deploy Admin Proxy.
         // This Admin is responsible for proxy updates including implementation updates
@@ -43,13 +43,13 @@ contract DeployScript is Script {
 
         // deploy Configurator Transparent proxy
         ConfiguratorProxy mumbaiCometConfiguratorProxy = new ConfiguratorProxy(
-            mumbaiCometConfiguratorImpl,
-            mumbaiCometAdminProxy,
+            address(mumbaiCometConfiguratorImpl),
+            address(mumbaiCometAdminProxy),
             data
         );
 
         // Cast Configurator Proxy to configurator
-        Configurator mumbaiCometConfigurator =  Configurator(mumbaiCometConfiguratorProxy);
+        Configurator mumbaiCometConfigurator =  Configurator(address(mumbaiCometConfiguratorProxy));
         
         CometConfiguration.AssetConfig[] memory assetConfigs = new CometConfiguration.AssetConfig[](4);
         assetConfigs[0] = CometConfiguration.AssetConfig({
@@ -94,13 +94,13 @@ contract DeployScript is Script {
 
 
         // deploy Comet Implementation
-        comet mumbaiCometImpl = new Comet(CometConfiguration.Configuration(
+        Comet mumbaiCometImpl = new Comet(CometConfiguration.Configuration(
             {
                 governor: deployerPrivateKey,
                 pauseGuardian: deployerPrivateKey,
                 baseToken: Constants.USDC,
                 baseTokenPriceFeed: Constants.USDC_PRICE_FEED,
-                extensionDelegate: mumbaiCometExt,
+                extensionDelegate: address(mumbaiCometExt),
                 supplyKink: 8e17,
                 supplyPerYearInterestRateSlopeLow: 325e16,
                 supplyPerYearInterestRateSlopeHigh: 4e17,
@@ -111,8 +111,10 @@ contract DeployScript is Script {
                 borrowPerYearInterestRateBase: 15e16,
                 storeFrontPriceFactor: 5e17,
                 trackingIndexScale: 1e15,
-                baseTrackingSupplySpeed: 11574074074074e9,
-                baseTrackingBorrowSpeed: 1145833333333333e12,
+                //Fill these Two values correctly in real deployment
+                baseTrackingSupplySpeed: 0,
+                baseTrackingBorrowSpeed: 0,
+
                 baseMinForRewards: 10000e6,
                 baseBorrowMin: 100e6,
                 targetReserves: 5000000e6,
@@ -122,23 +124,23 @@ contract DeployScript is Script {
 
         // Deploy Transparent Comet Proxy
         TransparentUpgradeableProxy mumbaiCometProxy = new TransparentUpgradeableProxy(
-            mumbaiCometImpl,
+            address(mumbaiCometImpl),
             deployerPrivateKey,
-            []
+            bytes("")
         );
 
         //Cast comet Proxy to Comet
-        comet cometMumbai = Comet(mumbaiCometProxy);
+        Comet cometMumbai = Comet(payable(address(mumbaiCometProxy)));
 
         // Intialize the storage for comet
         cometMumbai.initializeStorage();
 
         // Set the factory for configurator
-        Configurator.setFactory(cometMumbai, mumbaiCometFactory);
+        mumbaiCometConfigurator.setFactory(address(cometMumbai), address(mumbaiCometFactory));
 
         // Deploy Rewards contract and set Comet and reward token
         CometRewards mumbaiCometRewards = new CometRewards(deployerPrivateKey);
-        CometRewards.setRewardConfig(cometMumbai, Constants.RewardToken);
+        mumbaiCometRewards.setRewardConfig(address(cometMumbai), Constants.REWARD_TOKEN);
 
         vm.stopBroadcast();
     }
