@@ -33,7 +33,8 @@ contract DeployScript is Script {
         }));
 
         //Deploy Comet Factory
-        CometFactory mumbaiCometFactory = new CometFactory();
+        /// @notice Comet Factory is not being deployed due to crossing code size limit
+        //CometFactory mumbaiCometFactory = new CometFactory();
 
         // Deploy the configurator
         Configurator mumbaiCometConfiguratorImpl = new Configurator();
@@ -53,12 +54,12 @@ contract DeployScript is Script {
         
         CometConfiguration.AssetConfig[] memory assetConfigs = new CometConfiguration.AssetConfig[](4);
         assetConfigs[0] = CometConfiguration.AssetConfig({
-            asset: Constants.WETH9,
-            priceFeed: Constants.WETH9_PRICE_FEED,
+            asset: Constants.WETH,
+            priceFeed: Constants.WETH_PRICE_FEED,
             decimals: 18,
-            borrowCollateralFactor: 82e17,
-            liquidateCollateralFactor: 85e17    ,
-            liquidationFactor: 93e17,
+            borrowCollateralFactor: 82e16,
+            liquidateCollateralFactor: 85e16    ,
+            liquidationFactor: 93e16,
             supplyCap: 50_000e18
         });
 
@@ -67,8 +68,8 @@ contract DeployScript is Script {
             priceFeed: Constants.WBTC_PRICE_FEED,
             decimals: 8,
             borrowCollateralFactor: 7e17,
-            liquidateCollateralFactor: 75e17,
-            liquidationFactor: 93e17,
+            liquidateCollateralFactor: 75e16,
+            liquidationFactor: 93e16,
             supplyCap: 20_000e8
         });
 
@@ -76,9 +77,9 @@ contract DeployScript is Script {
             asset: Constants.WMATIC,
             priceFeed: Constants.WMATIC_PRICE_FEED,
             decimals: 18,
-            borrowCollateralFactor: 82e17,
-            liquidateCollateralFactor: 85e17,
-            liquidationFactor: 93e17,
+            borrowCollateralFactor: 82e16,
+            liquidateCollateralFactor: 85e16,
+            liquidationFactor: 93e16,
             supplyCap: 500_000e18
         });
 
@@ -86,9 +87,9 @@ contract DeployScript is Script {
             asset: Constants.DAI,
             priceFeed: Constants.DAI_PRICE_FEED,
             decimals: 18,
-            borrowCollateralFactor: 79e17,
-            liquidateCollateralFactor: 79e17,
-            liquidationFactor: 93e17,
+            borrowCollateralFactor: 79e16,
+            liquidateCollateralFactor: 85e16,
+            liquidationFactor: 93e16,
             supplyCap: 1_000_000e18
         });
 
@@ -132,16 +133,21 @@ contract DeployScript is Script {
         //Cast comet Proxy to Comet
         Comet cometMumbai = Comet(payable(address(mumbaiCometProxy)));
 
-        // Intialize the storage for comet
-        cometMumbai.initializeStorage();
-
         // Set the factory for configurator
-        mumbaiCometConfigurator.setFactory(address(cometMumbai), address(mumbaiCometFactory));
+        // COmet Factory is not being deployed due to crossing code size limit
+        //mumbaiCometConfigurator.setFactory(address(cometMumbai), address(mumbaiCometFactory));
 
         // Deploy Rewards contract and set Comet and reward token
         CometRewards mumbaiCometRewards = new CometRewards(deployerPrivateKey);
         mumbaiCometRewards.setRewardConfig(address(cometMumbai), Constants.REWARD_TOKEN);
 
+        vm.stopBroadcast();
+
+        uint256 deployer_second = vm.envUint("PRIVATE_KEY_SECOND");
+
+        address deployerPrivateKeySecond = vm.rememberKey(deployer_second);
+        vm.startBroadcast(deployerPrivateKeySecond);
+        cometMumbai.initializeStorage();
         vm.stopBroadcast();
     }
 }
