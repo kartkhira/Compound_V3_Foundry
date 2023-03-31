@@ -36,19 +36,21 @@ contract DeployScript is Script {
         CometFactory mumbaiCometFactory = new CometFactory();
 
         // Deploy the configurator
-        Configurator mumbaiCometConfigurator = new Configurator();
+        Configurator mumbaiCometConfiguratorImpl = new Configurator();
 
         // Get the data ready 
         bytes memory data = abi.encodeWithSignature("initialize(address)", deployerPrivateKey);
 
         // deploy Configurator Transparent proxy
         ConfiguratorProxy mumbaiCometConfiguratorProxy = new ConfiguratorProxy(
-            mumbaiCometConfigurator,
+            mumbaiCometConfiguratorImpl,
             mumbaiCometAdminProxy,
             data
         );
 
-
+        // Cast Configurator Proxy to configurator
+        Configurator mumbaiCometConfigurator =  Configurator(mumbaiCometConfiguratorProxy);
+        
         CometConfiguration.AssetConfig[] memory assetConfigs = new CometConfiguration.AssetConfig[](4);
         assetConfigs[0] = CometConfiguration.AssetConfig({
             asset: Constants.WETH9,
@@ -124,6 +126,19 @@ contract DeployScript is Script {
             deployerPrivateKey,
             []
         );
+
+        //Cast comet Proxy to Comet
+        comet cometMumbai = Comet(mumbaiCometProxy);
+
+        // Intialize the storage for comet
+        cometMumbai.initializeStorage();
+
+        // Set the factory for configurator
+        Configurator.setFactory(cometMumbai, mumbaiCometFactory);
+
+        // Deploy Rewards contract and set Comet and reward token
+        CometRewards mumbaiCometRewards = new CometRewards(deployerPrivateKey);
+        CometRewards.setRewardConfig(cometMumbai, Constants.RewardToken);
 
         vm.stopBroadcast();
     }

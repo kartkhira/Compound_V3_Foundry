@@ -15,4 +15,7 @@ library Constants {
     address constant WBTC_PRICE_FEED = 0x007A22900a3B98143368Bd5906f8E17e9867581b;
     address constant WMATIC_PRICE_FEED = 0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada;
     address constant DAI_PRICE_FEED = 0x0FCAa9c899EC5A91eBc3D5Dd869De833b06fB046;
+
+    //Making Reward Token as USDC for now
+    address constant REWARD_TOKEN = USDC ;
 }
