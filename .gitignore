@@ -3,7 +3,7 @@ cache/
 out/
 
 # Ignores development broadcast logs
-broadcast
+broadcast/
 
 # Docs
 docs/
@@ -13,6 +13,6 @@ docs/
 
 # Github
 
-.github
+.github/
 .git
 .vscode
